@@ -11,7 +11,7 @@ export const useWindowManager = (desktopRef: RefObject<HTMLDivElement | null>) =
       const base = WINDOW_LAYOUT[tool.id]
       initial[tool.id] = {
         ...base,
-        isOpen: index === 0,
+        isOpen: tool.id === "calculator" ? false : index === 0,
         minimized: false,
         z: index + 1,
       }

@@ -5,6 +5,7 @@ import {buildMapSrc, caesarCipher, decodeBase64, encodeBase64, generatePassword,
 
 type SnakeDirection = "up" | "down" | "left" | "right"
 type SnakeCell = {x: number; y: number}
+type BlackjackCard = {rank: string; suit: string; value: number}
 
 const SNAKE_GRID_SIZE = 16
 
@@ -34,6 +35,41 @@ const randomSnakeFood = (occupied: SnakeCell[]) => {
   } while (occupied.some((cell) => cell.x === next.x && cell.y === next.y) && safeGuard < 100)
 
   return next
+}
+
+const BLACKJACK_SUITS = ["♠", "♥", "♦", "♣"]
+const BLACKJACK_RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+
+const createBlackjackDeck = () =>
+  BLACKJACK_SUITS.flatMap((suit) =>
+    BLACKJACK_RANKS.map((rank) => {
+      if (rank === "A") {
+        return {rank, suit, value: 11}
+      }
+      if (["J", "Q", "K"].includes(rank)) {
+        return {rank, suit, value: 10}
+      }
+      return {rank, suit, value: Number(rank)}
+    }),
+  )
+
+const shuffleBlackjackDeck = (cards: BlackjackCard[]) => {
+  const next = [...cards]
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
+  }
+  return next
+}
+
+const calculateBlackjackTotal = (cards: BlackjackCard[]) => {
+  let total = cards.reduce((sum, card) => sum + card.value, 0)
+  let aces = cards.filter((card) => card.rank === "A").length
+  while (total > 21 && aces > 0) {
+    total -= 10
+    aces -= 1
+  }
+  return total
 }
 
 type UseWebOSStateArgs = {
@@ -113,6 +149,12 @@ export const useWebOSState = ({openWindow, uptimeText, paintCanvasRef}: UseWebOS
   const [dinoBest, setDinoBest] = useState(0)
   const [dinoGameOver, setDinoGameOver] = useState(false)
   const dinoJumpRef = useRef(0)
+
+  const [blackjackDeck, setBlackjackDeck] = useState<BlackjackCard[]>([])
+  const [blackjackPlayerCards, setBlackjackPlayerCards] = useState<BlackjackCard[]>([])
+  const [blackjackDealerCards, setBlackjackDealerCards] = useState<BlackjackCard[]>([])
+  const [blackjackRunning, setBlackjackRunning] = useState(false)
+  const [blackjackStatus, setBlackjackStatus] = useState("Click Deal to start a round.")
 
   const [terminalInput, setTerminalInput] = useState("")
   const [terminalLines, setTerminalLines] = useState<string[]>(["WebOS Terminal initialized.", "Type 'help' to list commands."])
@@ -604,6 +646,91 @@ export const useWebOSState = ({openWindow, uptimeText, paintCanvasRef}: UseWebOS
     setDinoRunning(true)
   }
 
+  const resetBlackjack = () => {
+    setBlackjackDeck([])
+    setBlackjackPlayerCards([])
+    setBlackjackDealerCards([])
+    setBlackjackRunning(false)
+    setBlackjackStatus("Click Deal to start a round.")
+  }
+
+  const startBlackjack = () => {
+    const deck = shuffleBlackjackDeck(createBlackjackDeck())
+    const player = [deck[0], deck[2]]
+    const dealer = [deck[1], deck[3]]
+    const restDeck = deck.slice(4)
+
+    const playerTotal = calculateBlackjackTotal(player)
+    const dealerTotal = calculateBlackjackTotal(dealer)
+
+    let nextStatus = "Round in progress."
+    let nextRunning = true
+    if (playerTotal === 21 && dealerTotal === 21) {
+      nextStatus = "Push. Both hit Blackjack."
+      nextRunning = false
+    } else if (playerTotal === 21) {
+      nextStatus = "Blackjack! You win."
+      nextRunning = false
+    } else if (dealerTotal === 21) {
+      nextStatus = "Dealer has Blackjack."
+      nextRunning = false
+    }
+
+    setBlackjackDeck(restDeck)
+    setBlackjackPlayerCards(player)
+    setBlackjackDealerCards(dealer)
+    setBlackjackRunning(nextRunning)
+    setBlackjackStatus(nextStatus)
+  }
+
+  const hitBlackjack = () => {
+    if (!blackjackRunning || blackjackDeck.length === 0) {
+      return
+    }
+
+    const [nextCard, ...restDeck] = blackjackDeck
+    const nextPlayer = [...blackjackPlayerCards, nextCard]
+    const nextTotal = calculateBlackjackTotal(nextPlayer)
+
+    setBlackjackDeck(restDeck)
+    setBlackjackPlayerCards(nextPlayer)
+
+    if (nextTotal > 21) {
+      setBlackjackRunning(false)
+      setBlackjackStatus("Bust. Dealer wins.")
+    }
+  }
+
+  const standBlackjack = () => {
+    if (!blackjackRunning) {
+      return
+    }
+
+    let dealer = [...blackjackDealerCards]
+    let restDeck = [...blackjackDeck]
+    while (calculateBlackjackTotal(dealer) < 17 && restDeck.length > 0) {
+      dealer = [...dealer, restDeck[0]]
+      restDeck = restDeck.slice(1)
+    }
+
+    const playerTotal = calculateBlackjackTotal(blackjackPlayerCards)
+    const dealerTotal = calculateBlackjackTotal(dealer)
+
+    let nextStatus = "Push."
+    if (dealerTotal > 21) {
+      nextStatus = "Dealer busts. You win."
+    } else if (playerTotal > dealerTotal) {
+      nextStatus = "You win."
+    } else if (playerTotal < dealerTotal) {
+      nextStatus = "Dealer wins."
+    }
+
+    setBlackjackDealerCards(dealer)
+    setBlackjackDeck(restDeck)
+    setBlackjackRunning(false)
+    setBlackjackStatus(nextStatus)
+  }
+
   return {
     wallpaperMode,
     setWallpaperMode,
@@ -705,6 +832,16 @@ export const useWebOSState = ({openWindow, uptimeText, paintCanvasRef}: UseWebOS
     dinoJump,
     startDino,
     resetDino,
+
+    blackjackDeck,
+    blackjackPlayerCards,
+    blackjackDealerCards,
+    blackjackRunning,
+    blackjackStatus,
+    startBlackjack,
+    hitBlackjack,
+    standBlackjack,
+    resetBlackjack,
 
     terminalInput,
     setTerminalInput,

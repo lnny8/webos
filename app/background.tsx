@@ -46,7 +46,7 @@ const Squares: React.FC<SquaresProps> = ({direction = "right", speed = 1, border
 
       const gradient = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, Math.sqrt(canvas.width ** 2 + canvas.height ** 2) / 2)
       gradient.addColorStop(0, "rgba(0, 0, 0, 0)")
-      gradient.addColorStop(1, "rgba(6, 0, 16, 0.65)")
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0.8)")
 
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, canvas.width, canvas.height)

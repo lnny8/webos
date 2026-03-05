@@ -1,9 +1,11 @@
-export type ToolId = "calculator" | "stopwatch" | "timer" | "notes" | "converter" | "password" | "webviewer" | "arcade" | "snake" | "dino" | "settings" | "terminal" | "paint" | "maps" | "breachsim" | "packetsniffer" | "cipherlab" | "sysmonitor" | "hashvault"
+import type {LucideIcon} from "lucide-react"
+
+export type ToolId = "calculator" | "stopwatch" | "timer" | "notes" | "converter" | "password" | "webviewer" | "arcade" | "snake" | "dino" | "blackjack" | "settings" | "terminal" | "paint" | "maps" | "breachsim" | "packetsniffer" | "cipherlab" | "sysmonitor" | "hashvault"
 
 export type ToolDefinition = {
   id: ToolId
   name: string
-  icon: string
+  icon: LucideIcon
   description: string
 }
 

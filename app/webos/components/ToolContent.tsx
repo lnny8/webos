@@ -15,6 +15,16 @@ const sparkline = (values: number[]) => {
   return values.map((value) => blocks[Math.max(0, Math.min(blocks.length - 1, Math.round((value / 100) * (blocks.length - 1))))]).join("")
 }
 
+const blackjackTotal = (cards: {rank: string; value: number}[]) => {
+  let total = cards.reduce((sum, card) => sum + card.value, 0)
+  let aces = cards.filter((card) => card.rank === "A").length
+  while (total > 21 && aces > 0) {
+    total -= 10
+    aces -= 1
+  }
+  return total
+}
+
 export const ToolContent = ({id, state, paintCanvasRef}: ToolContentProps) => {
   if (id === "calculator") {
     return (
@@ -339,6 +349,60 @@ export const ToolContent = ({id, state, paintCanvasRef}: ToolContentProps) => {
         </div>
 
         <p className="text-xs opacity-80">Press Space / ArrowUp / Jump button to jump.</p>
+      </section>
+    )
+  }
+
+  if (id === "blackjack") {
+    const playerTotal = blackjackTotal(state.blackjackPlayerCards)
+    const visibleDealerCards = state.blackjackRunning && state.blackjackDealerCards.length > 1 ? [state.blackjackDealerCards[0]] : state.blackjackDealerCards
+    const dealerTotal = blackjackTotal(visibleDealerCards)
+
+    return (
+      <section className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="border border-[#1a6628] bg-[#10351a] px-3 py-2 hover:bg-[#184f27]" onClick={state.startBlackjack}>
+            Deal
+          </button>
+          <button type="button" className="border border-[#1a6628] bg-[#07130a] px-3 py-2 hover:bg-[#0f2314]" onClick={state.hitBlackjack} disabled={!state.blackjackRunning}>
+            Hit
+          </button>
+          <button type="button" className="border border-[#1a6628] bg-[#07130a] px-3 py-2 hover:bg-[#0f2314]" onClick={state.standBlackjack} disabled={!state.blackjackRunning}>
+            Stand
+          </button>
+          <button type="button" className="border border-[#1a6628] bg-[#2b1010] px-3 py-2 hover:bg-[#401919]" onClick={state.resetBlackjack}>
+            Reset
+          </button>
+        </div>
+
+        <p className="text-sm text-[#8be8a9]">{state.blackjackStatus}</p>
+
+        <div className="space-y-3">
+          <div className="border border-[#1a6628] bg-black/70 p-3">
+            <p className="mb-2 text-xs text-[#6fdd8f]">Dealer ({dealerTotal})</p>
+            <div className="flex flex-wrap gap-2">
+              {visibleDealerCards.map((card, index) => (
+                <span key={`${card.rank}-${card.suit}-${index}`} className="min-w-14 border border-[#2a6e3f] bg-[#08110b] px-2 py-1 text-center">
+                  {card.rank}
+                  {card.suit}
+                </span>
+              ))}
+              {state.blackjackRunning && state.blackjackDealerCards.length > 1 && <span className="min-w-14 border border-[#2a6e3f] bg-[#08110b] px-2 py-1 text-center">??</span>}
+            </div>
+          </div>
+
+          <div className="border border-[#1a6628] bg-black/70 p-3">
+            <p className="mb-2 text-xs text-[#6fdd8f]">Player ({playerTotal})</p>
+            <div className="flex flex-wrap gap-2">
+              {state.blackjackPlayerCards.map((card, index) => (
+                <span key={`${card.rank}-${card.suit}-${index}`} className="min-w-14 border border-[#2a6e3f] bg-[#08110b] px-2 py-1 text-center">
+                  {card.rank}
+                  {card.suit}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
     )
   }

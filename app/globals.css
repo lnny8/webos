@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #020503;
+  --background: #010202;
   --foreground: #84ff9f;
 }
 
@@ -14,8 +14,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #020503;
     --foreground: #84ff9f;
+    --background: #010202;
   }
 }
 
@@ -28,7 +28,7 @@ body {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1a6628 #020503;
+  scrollbar-color: #1a6628 #010202;
 }
 
 ::selection {
